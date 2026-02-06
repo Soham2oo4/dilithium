@@ -1,0 +1,176 @@
+Loading test vector into hardware RAM...
+Write cycle 0: Setting addr=0 data_in=1 we=1
+Write cycle 1: Setting addr=1 data_in=2 we=1
+Write cycle 2: Setting addr=2 data_in=3 we=1
+Write cycle 3: Setting addr=3 data_in=4 we=1
+Write cycle 4: Setting addr=4 data_in=5 we=1
+Write cycle 5: Setting addr=5 data_in=6 we=1
+Write cycle 6: Setting addr=6 data_in=7 we=1
+Write cycle 7: Setting addr=7 data_in=8 we=1
+Write cycle 8: Setting addr=8 data_in=9 we=1
+Write cycle 9: Setting addr=9 data_in=10 we=1
+RAM[0] = 1 (expected 1)
+RAM[1] = 2 (expected 2)
+RAM[2] = 3 (expected 3)
+RAM[3] = 4 (expected 4)
+RAM[4] = 5 (expected 5)
+RAM[5] = 6 (expected 6)
+RAM[6] = 7 (expected 7)
+RAM[7] = 8 (expected 8)
+RAM[8] = 9 (expected 9)
+RAM[9] = 10 (expected 10)
+Running hardware NTT...
+Tracing first 128 cycles:
+C=0 k_out=1 state=1 len_exp=0 start_idx=0 j_idx=0 ext_out=1
+C=1 k_out=1 state=2 len_exp=0 start_idx=0 j_idx=0 ext_out=1
+C=2 k_out=1 state=3 len_exp=0 start_idx=0 j_idx=0 ext_out=2887950
+C=3 k_out=2 state=1 len_exp=0 start_idx=0 j_idx=1 ext_out=2
+C=4 k_out=2 state=2 len_exp=0 start_idx=0 j_idx=1 ext_out=2
+C=5 k_out=2 state=3 len_exp=0 start_idx=0 j_idx=1 ext_out=4293458068
+C=6 k_out=3 state=1 len_exp=0 start_idx=0 j_idx=2 ext_out=3
+C=7 k_out=3 state=2 len_exp=0 start_idx=0 j_idx=2 ext_out=3
+C=8 k_out=3 state=3 len_exp=0 start_idx=0 j_idx=2 ext_out=2149422
+C=9 k_out=4 state=1 len_exp=0 start_idx=0 j_idx=3 ext_out=4
+C=10 k_out=4 state=2 len_exp=0 start_idx=0 j_idx=3 ext_out=4
+C=11 k_out=4 state=3 len_exp=0 start_idx=0 j_idx=3 ext_out=4291696153
+C=12 k_out=5 state=1 len_exp=0 start_idx=0 j_idx=4 ext_out=5
+C=13 k_out=5 state=2 len_exp=0 start_idx=0 j_idx=4 ext_out=5
+C=14 k_out=5 state=3 len_exp=0 start_idx=0 j_idx=4 ext_out=4293932020
+C=15 k_out=6 state=1 len_exp=0 start_idx=0 j_idx=5 ext_out=6
+C=16 k_out=6 state=2 len_exp=0 start_idx=0 j_idx=5 ext_out=6
+C=17 k_out=6 state=3 len_exp=0 start_idx=0 j_idx=5 ext_out=4293052997
+C=18 k_out=7 state=1 len_exp=0 start_idx=0 j_idx=6 ext_out=7
+C=19 k_out=7 state=2 len_exp=0 start_idx=0 j_idx=6 ext_out=7
+C=20 k_out=7 state=3 len_exp=0 start_idx=0 j_idx=6 ext_out=4293564158
+C=21 k_out=8 state=1 len_exp=0 start_idx=0 j_idx=7 ext_out=8
+C=22 k_out=8 state=2 len_exp=0 start_idx=0 j_idx=7 ext_out=8
+C=23 k_out=8 state=3 len_exp=0 start_idx=0 j_idx=7 ext_out=1643286
+C=24 k_out=9 state=1 len_exp=0 start_idx=0 j_idx=8 ext_out=9
+C=25 k_out=9 state=2 len_exp=0 start_idx=0 j_idx=8 ext_out=9
+C=26 k_out=9 state=3 len_exp=0 start_idx=0 j_idx=8 ext_out=4294813907
+C=27 k_out=10 state=1 len_exp=0 start_idx=0 j_idx=9 ext_out=10
+C=28 k_out=10 state=2 len_exp=0 start_idx=0 j_idx=9 ext_out=10
+C=29 k_out=10 state=3 len_exp=0 start_idx=0 j_idx=9 ext_out=1130676
+C=30 k_out=11 state=1 len_exp=0 start_idx=0 j_idx=10 ext_out=11
+C=31 k_out=11 state=2 len_exp=0 start_idx=0 j_idx=10 ext_out=11
+C=32 k_out=11 state=3 len_exp=0 start_idx=0 j_idx=10 ext_out=4294445463
+C=33 k_out=12 state=1 len_exp=0 start_idx=0 j_idx=11 ext_out=12
+C=34 k_out=12 state=2 len_exp=0 start_idx=0 j_idx=11 ext_out=12
+C=35 k_out=12 state=3 len_exp=0 start_idx=0 j_idx=11 ext_out=4294449462
+C=36 k_out=13 state=1 len_exp=0 start_idx=0 j_idx=12 ext_out=13
+C=37 k_out=13 state=2 len_exp=0 start_idx=0 j_idx=12 ext_out=13
+C=38 k_out=13 state=3 len_exp=0 start_idx=0 j_idx=12 ext_out=4294352688
+C=39 k_out=14 state=1 len_exp=0 start_idx=0 j_idx=13 ext_out=14
+C=40 k_out=14 state=2 len_exp=0 start_idx=0 j_idx=13 ext_out=14
+C=41 k_out=14 state=3 len_exp=0 start_idx=0 j_idx=13 ext_out=4293201633
+C=42 k_out=15 state=1 len_exp=0 start_idx=0 j_idx=14 ext_out=15
+C=43 k_out=15 state=2 len_exp=0 start_idx=0 j_idx=14 ext_out=15
+C=44 k_out=15 state=3 len_exp=0 start_idx=0 j_idx=14 ext_out=4293676744
+C=45 k_out=16 state=1 len_exp=0 start_idx=0 j_idx=15 ext_out=16
+C=46 k_out=16 state=2 len_exp=0 start_idx=0 j_idx=15 ext_out=16
+C=47 k_out=16 state=3 len_exp=0 start_idx=0 j_idx=15 ext_out=4294962035
+C=48 k_out=17 state=1 len_exp=0 start_idx=0 j_idx=16 ext_out=17
+C=49 k_out=17 state=2 len_exp=0 start_idx=0 j_idx=16 ext_out=17
+C=50 k_out=17 state=3 len_exp=0 start_idx=0 j_idx=16 ext_out=776796
+C=51 k_out=18 state=1 len_exp=0 start_idx=0 j_idx=17 ext_out=18
+C=52 k_out=18 state=2 len_exp=0 start_idx=0 j_idx=17 ext_out=18
+C=53 k_out=18 state=3 len_exp=0 start_idx=0 j_idx=17 ext_out=4292515018
+C=54 k_out=19 state=1 len_exp=0 start_idx=0 j_idx=18 ext_out=19
+C=55 k_out=19 state=2 len_exp=0 start_idx=0 j_idx=18 ext_out=19
+C=56 k_out=19 state=3 len_exp=0 start_idx=0 j_idx=18 ext_out=2469610
+C=57 k_out=20 state=1 len_exp=0 start_idx=0 j_idx=19 ext_out=20
+C=58 k_out=20 state=2 len_exp=0 start_idx=0 j_idx=19 ext_out=20
+C=59 k_out=20 state=3 len_exp=0 start_idx=0 j_idx=19 ext_out=4291018542
+C=60 k_out=21 state=1 len_exp=0 start_idx=0 j_idx=20 ext_out=21
+C=61 k_out=21 state=2 len_exp=0 start_idx=0 j_idx=20 ext_out=21
+C=62 k_out=21 state=3 len_exp=0 start_idx=0 j_idx=20 ext_out=3748589
+C=63 k_out=22 state=1 len_exp=0 start_idx=0 j_idx=21 ext_out=22
+C=64 k_out=22 state=2 len_exp=0 start_idx=0 j_idx=21 ext_out=22
+C=65 k_out=22 state=3 len_exp=0 start_idx=0 j_idx=21 ext_out=4292228282
+C=66 k_out=23 state=1 len_exp=0 start_idx=0 j_idx=22 ext_out=23
+C=67 k_out=23 state=2 len_exp=0 start_idx=0 j_idx=22 ext_out=23
+C=68 k_out=23 state=3 len_exp=0 start_idx=0 j_idx=22 ext_out=3991155
+C=69 k_out=24 state=1 len_exp=0 start_idx=0 j_idx=23 ext_out=24
+C=70 k_out=24 state=2 len_exp=0 start_idx=0 j_idx=23 ext_out=24
+C=71 k_out=24 state=3 len_exp=0 start_idx=0 j_idx=23 ext_out=4292449676
+C=72 k_out=25 state=1 len_exp=0 start_idx=0 j_idx=24 ext_out=25
+C=73 k_out=25 state=2 len_exp=0 start_idx=0 j_idx=24 ext_out=25
+C=74 k_out=25 state=3 len_exp=0 start_idx=0 j_idx=24 ext_out=3436923
+C=75 k_out=26 state=1 len_exp=0 start_idx=0 j_idx=25 ext_out=26
+C=76 k_out=26 state=2 len_exp=0 start_idx=0 j_idx=25 ext_out=26
+C=77 k_out=26 state=3 len_exp=0 start_idx=0 j_idx=25 ext_out=696046
+C=78 k_out=27 state=1 len_exp=0 start_idx=0 j_idx=26 ext_out=27
+C=79 k_out=27 state=2 len_exp=0 start_idx=0 j_idx=26 ext_out=27
+C=80 k_out=27 state=3 len_exp=0 start_idx=0 j_idx=26 ext_out=4051320
+C=81 k_out=28 state=1 len_exp=0 start_idx=0 j_idx=27 ext_out=28
+C=82 k_out=28 state=2 len_exp=0 start_idx=0 j_idx=27 ext_out=28
+C=83 k_out=28 state=3 len_exp=0 start_idx=0 j_idx=27 ext_out=4063477
+C=84 k_out=29 state=1 len_exp=0 start_idx=0 j_idx=28 ext_out=29
+C=85 k_out=29 state=2 len_exp=0 start_idx=0 j_idx=28 ext_out=29
+C=86 k_out=29 state=3 len_exp=0 start_idx=0 j_idx=28 ext_out=4292830156
+C=87 k_out=30 state=1 len_exp=0 start_idx=0 j_idx=29 ext_out=30
+C=88 k_out=30 state=2 len_exp=0 start_idx=0 j_idx=29 ext_out=30
+C=89 k_out=30 state=3 len_exp=0 start_idx=0 j_idx=29 ext_out=4294141372
+C=90 k_out=31 state=1 len_exp=0 start_idx=0 j_idx=30 ext_out=31
+C=91 k_out=31 state=2 len_exp=0 start_idx=0 j_idx=30 ext_out=31
+C=92 k_out=31 state=3 len_exp=0 start_idx=0 j_idx=30 ext_out=1682197
+C=93 k_out=32 state=1 len_exp=0 start_idx=0 j_idx=31 ext_out=32
+C=94 k_out=32 state=2 len_exp=0 start_idx=0 j_idx=31 ext_out=32
+C=95 k_out=32 state=3 len_exp=0 start_idx=0 j_idx=31 ext_out=4291086526
+C=96 k_out=33 state=1 len_exp=0 start_idx=0 j_idx=32 ext_out=33
+C=97 k_out=33 state=2 len_exp=0 start_idx=0 j_idx=32 ext_out=33
+C=98 k_out=33 state=3 len_exp=0 start_idx=0 j_idx=32 ext_out=4294113375
+C=99 k_out=34 state=1 len_exp=0 start_idx=0 j_idx=33 ext_out=34
+C=100 k_out=34 state=2 len_exp=0 start_idx=0 j_idx=33 ext_out=34
+C=101 k_out=34 state=3 len_exp=0 start_idx=0 j_idx=33 ext_out=1321787
+C=102 k_out=35 state=1 len_exp=0 start_idx=0 j_idx=34 ext_out=35
+C=103 k_out=35 state=2 len_exp=0 start_idx=0 j_idx=34 ext_out=35
+C=104 k_out=35 state=3 len_exp=0 start_idx=0 j_idx=34 ext_out=4293262115
+C=105 k_out=36 state=1 len_exp=0 start_idx=0 j_idx=35 ext_out=36
+C=106 k_out=36 state=2 len_exp=0 start_idx=0 j_idx=35 ext_out=36
+C=107 k_out=36 state=3 len_exp=0 start_idx=0 j_idx=35 ext_out=2499298
+C=108 k_out=37 state=1 len_exp=0 start_idx=0 j_idx=36 ext_out=37
+C=109 k_out=37 state=2 len_exp=0 start_idx=0 j_idx=36 ext_out=37
+C=110 k_out=37 state=3 len_exp=0 start_idx=0 j_idx=36 ext_out=4293049063
+C=111 k_out=38 state=1 len_exp=0 start_idx=0 j_idx=37 ext_out=38
+C=112 k_out=38 state=2 len_exp=0 start_idx=0 j_idx=37 ext_out=38
+C=113 k_out=38 state=3 len_exp=0 start_idx=0 j_idx=37 ext_out=4291773401
+C=114 k_out=39 state=1 len_exp=0 start_idx=0 j_idx=38 ext_out=39
+C=115 k_out=39 state=2 len_exp=0 start_idx=0 j_idx=38 ext_out=39
+C=116 k_out=39 state=3 len_exp=0 start_idx=0 j_idx=38 ext_out=4292942777
+C=117 k_out=40 state=1 len_exp=0 start_idx=0 j_idx=39 ext_out=40
+C=118 k_out=40 state=2 len_exp=0 start_idx=0 j_idx=39 ext_out=40
+C=119 k_out=40 state=3 len_exp=0 start_idx=0 j_idx=39 ext_out=2674560
+C=120 k_out=41 state=1 len_exp=0 start_idx=0 j_idx=40 ext_out=41
+C=121 k_out=41 state=2 len_exp=0 start_idx=0 j_idx=40 ext_out=41
+C=122 k_out=41 state=3 len_exp=0 start_idx=0 j_idx=40 ext_out=4294114001
+C=123 k_out=42 state=1 len_exp=0 start_idx=0 j_idx=41 ext_out=42
+C=124 k_out=42 state=2 len_exp=0 start_idx=0 j_idx=41 ext_out=42
+C=125 k_out=42 state=3 len_exp=0 start_idx=0 j_idx=41 ext_out=1473078
+C=126 k_out=43 state=1 len_exp=0 start_idx=0 j_idx=42 ext_out=43
+C=127 k_out=43 state=2 len_exp=0 start_idx=0 j_idx=42 ext_out=43
+Hardware NTT completed in 1507 cycles
+Reading output from hardware RAM...
+Running software NTT...
+First 10 hardware outputs:
+  output_hw[0] = 1957751, output_sw[0] = -4135435
+  output_hw[1] = 3941882, output_sw[1] = -3344473
+  output_hw[2] = 721144, output_sw[2] = -3055472
+  output_hw[3] = 1931469, output_sw[3] = 5167776
+  output_hw[4] = 4801309, output_sw[4] = -1630539
+  output_hw[5] = 3774131, output_sw[5] = -9190453
+  output_hw[6] = 2467498, output_sw[6] = -1567068
+  output_hw[7] = 5161489, output_sw[7] = -5609240
+  output_hw[8] = 1227039, output_sw[8] = 2953865
+  output_hw[9] = -819400, output_sw[9] = 2303047
+Mismatch at [0]: HW=1957751 SW=-4135435
+Mismatch at [1]: HW=3941882 SW=-3344473
+Mismatch at [2]: HW=721144 SW=-3055472
+Mismatch at [3]: HW=1931469 SW=5167776
+Mismatch at [4]: HW=4801309 SW=-1630539
+Mismatch at [5]: HW=3774131 SW=-9190453
+Mismatch at [6]: HW=2467498 SW=-1567068
+Mismatch at [7]: HW=5161489 SW=-5609240
+Mismatch at [8]: HW=1227039 SW=2953865
+Mismatch at [9]: HW=-819400 SW=2303047
+❌ FAILED: 256 mismatches
