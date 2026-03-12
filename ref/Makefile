@@ -1,139 +1,144 @@
-CC ?= /usr/bin/cc
-CFLAGS += -Wall -Wextra -Wpedantic -Wmissing-prototypes -Wredundant-decls \
-  -Wshadow -Wvla -Wpointer-arith -O3 -fomit-frame-pointer
-NISTFLAGS += -Wno-unused-result -O3 -fomit-frame-pointer
-SOURCES = sign.c packing.c polyvec.c poly.c ntt.c reduce.c rounding.c
-HEADERS = config.h params.h api.h sign.h packing.h polyvec.h poly.h ntt.h \
-  reduce.h rounding.h symmetric.h randombytes.h
-KECCAK_SOURCES = $(SOURCES) fips202.c symmetric-shake.c
-KECCAK_HEADERS = $(HEADERS) fips202.h
+VERILATOR = verilator
+TOP       = ntt_full
 
-.PHONY: all speed shared clean
+# Paths
+HW_DIR = ../hw/ntt
+SW_DIR = .
 
-all: \
-  test/test_dilithium2 \
-  test/test_dilithium3 \
-  test/test_dilithium5 \
-  test/test_vectors2 \
-  test/test_vectors3 \
-  test/test_vectors5
+# RTL sources
+RTL_SRCS = \
+    $(HW_DIR)/ntt_full.v \
+    $(HW_DIR)/ntt_controller.v \
+    $(HW_DIR)/ntt_ram.v \
+    $(HW_DIR)/ntt_bfu.v \
+    $(HW_DIR)/zetas_rom.v
 
-nistkat: \
-  nistkat/PQCgenKAT_sign2 \
-  nistkat/PQCgenKAT_sign3 \
-  nistkat/PQCgenKAT_sign5
+# Software sources
+SW_SRCS = \
+    $(SW_DIR)/my_sign_verify.c \
+    $(SW_DIR)/sign.c \
+    $(SW_DIR)/packing.c \
+    $(SW_DIR)/poly.c \
+    $(SW_DIR)/polyvec.c \
+    $(SW_DIR)/ntt.c \
+    $(SW_DIR)/reduce.c \
+    $(SW_DIR)/rounding.c \
+    $(SW_DIR)/fips202.c \
+    $(SW_DIR)/symmetric-shake.c \
+    $(SW_DIR)/randombytes.c \
+    $(SW_DIR)/ntt_hw_verilator.cpp \
+    $(SW_DIR)/keccak_hw_verilator.cpp
 
-speed: \
-  test/test_mul \
-  test/test_speed2 \
-  test/test_speed3 \
-  test/test_speed5 \
+# Headers
+INCLUDES = -I$(SW_DIR) -I$(HW_DIR)
 
-shared: \
-  libpqcrystals_dilithium2_ref.so \
-  libpqcrystals_dilithium3_ref.so \
-  libpqcrystals_dilithium5_ref.so \
-  libpqcrystals_fips202_ref.so \
+all: obj_dir/V$(TOP)
 
-libpqcrystals_fips202_ref.so: fips202.c fips202.h
-	$(CC) -shared -fPIC $(CFLAGS) -o $@ $<
+obj_dir/V$(TOP): $(RTL_SRCS) $(SW_SRCS)
+	$(VERILATOR) --cc $(RTL_SRCS) \
+		--exe $(SW_SRCS) \
+		--top-module $(TOP) \
+		-CFLAGS "$(INCLUDES) -O2 -DNTT_HW" \
+		-LDFLAGS "-lm"
+	make -C obj_dir -f V$(TOP).mk
 
-libpqcrystals_dilithium2_ref.so: $(SOURCES) $(HEADERS) symmetric-shake.c
-	$(CC) -shared -fPIC $(CFLAGS) -DDILITHIUM_MODE=2 \
-	  -o $@ $(SOURCES) symmetric-shake.c
+run: all
+	./obj_dir/V$(TOP)
 
-libpqcrystals_dilithium3_ref.so: $(SOURCES) $(HEADERS) symmetric-shake.c
-	$(CC) -shared -fPIC $(CFLAGS) -DDILITHIUM_MODE=3 \
-	  -o $@ $(SOURCES) symmetric-shake.c
+######################################################################
+# Combined Dilithium hardware build (NTT + Keccak)
+######################################################################
 
-libpqcrystals_dilithium5_ref.so: $(SOURCES) $(HEADERS) symmetric-shake.c
-	$(CC) -shared -fPIC $(CFLAGS) -DDILITHIUM_MODE=5 \
-	  -o $@ $(SOURCES) symmetric-shake.c
+DIL_NTT_TOP    = ntt_full
+DIL_KECCAK_TOP = keccak_f1600
+DIL_OBJ_NTT    = obj_dir_dil_ntt
+DIL_OBJ_KECCAK = obj_dir_dil_keccak
 
-test/test_dilithium2: test/test_dilithium.c randombytes.c $(KECCAK_SOURCES) \
-  $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=2 \
-	  -o $@ $< randombytes.c $(KECCAK_SOURCES)
+DIL_NTT_RTL_SRCS = \
+    ../hw/ntt/ntt_full.v \
+    ../hw/ntt/ntt_controller.v \
+    ../hw/ntt/ntt_ram.v \
+    ../hw/ntt/ntt_bfu.v \
+    ../hw/ntt/zetas_rom.v
 
-test/test_dilithium3: test/test_dilithium.c randombytes.c $(KECCAK_SOURCES) \
-  $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
-	  -o $@ $< randombytes.c $(KECCAK_SOURCES)
+DIL_KECCAK_RTL_SRCS = \
+    ../hw/hash/keccak-hw/pkg_keccak.sv \
+    ../hw/hash/keccak_f1600.sv \
+    ../hw/hash/keccak-hw/keccak_round.sv \
+    ../hw/hash/keccak-hw/keccak_round_constants_gen.sv
 
-test/test_dilithium5: test/test_dilithium.c randombytes.c $(KECCAK_SOURCES) \
-  $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=5 \
-	  -o $@ $< randombytes.c $(KECCAK_SOURCES)
+DIL_HW_SW_SRCS = \
+    my_sign_verify.c \
+    sign.c \
+    packing.c \
+    poly.c \
+    polyvec.c \
+    ntt.c \
+    reduce.c \
+    rounding.c \
+    fips202.c \
+    symmetric-shake.c \
+    randombytes.c \
+    ntt_hw_verilator.cpp \
+    keccak_hw_verilator.cpp
 
-test/test_vectors2: test/test_vectors.c $(KECCAK_SOURCES) \
-  $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=2 \
-	  -o $@ $< $(KECCAK_SOURCES)
+DIL_HW_INCLUDES = -I. -I../hw/ntt -I../hw/hash -I../hw/hash/keccak-hw
 
-test/test_vectors3: test/test_vectors.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
-	  -o $@ $< $(KECCAK_SOURCES)
+$(DIL_OBJ_KECCAK)/V$(DIL_KECCAK_TOP)__ALL.a: $(DIL_KECCAK_RTL_SRCS)
+	$(VERILATOR) --cc $(DIL_KECCAK_RTL_SRCS) \
+		--top-module $(DIL_KECCAK_TOP) \
+		--Mdir $(DIL_OBJ_KECCAK)
+	make -C $(DIL_OBJ_KECCAK) -f V$(DIL_KECCAK_TOP).mk V$(DIL_KECCAK_TOP)__ALL.a
 
-test/test_vectors5: test/test_vectors.c $(KECCAK_SOURCES) \
-  $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=5 \
-	  -o $@ $< $(KECCAK_SOURCES)
+$(DIL_OBJ_NTT)/V$(DIL_NTT_TOP): $(DIL_NTT_RTL_SRCS) $(DIL_HW_SW_SRCS) $(DIL_OBJ_KECCAK)/V$(DIL_KECCAK_TOP)__ALL.a
+	$(VERILATOR) --cc $(DIL_NTT_RTL_SRCS) \
+		--exe $(DIL_HW_SW_SRCS) \
+		--top-module $(DIL_NTT_TOP) \
+		--Mdir $(DIL_OBJ_NTT) \
+		-CFLAGS "$(DIL_HW_INCLUDES) -I$(abspath $(DIL_OBJ_KECCAK)) -O2 -DNTT_HW -DKECCAK_HW" \
+		-LDFLAGS "-lm $(abspath $(DIL_OBJ_KECCAK))/V$(DIL_KECCAK_TOP)__ALL.a"
+	make -C $(DIL_OBJ_NTT) -f V$(DIL_NTT_TOP).mk
 
-test/test_speed2: test/test_speed.c test/speed_print.c test/speed_print.h \
-  test/cpucycles.c test/cpucycles.h randombytes.c $(KECCAK_SOURCES) \
-  $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=2 \
-	  -o $@ $< test/speed_print.c test/cpucycles.c randombytes.c \
-	  $(KECCAK_SOURCES)
+dilithium_hw: $(DIL_OBJ_NTT)/V$(DIL_NTT_TOP)
 
-test/test_speed3: test/test_speed.c test/speed_print.c test/speed_print.h \
-  test/cpucycles.c test/cpucycles.h randombytes.c $(KECCAK_SOURCES) \
-  $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
-	  -o $@ $< test/speed_print.c test/cpucycles.c randombytes.c \
-	  $(KECCAK_SOURCES)
+run_dilithium_hw: dilithium_hw
+	./$(DIL_OBJ_NTT)/V$(DIL_NTT_TOP)
 
-test/test_speed5: test/test_speed.c test/speed_print.c test/speed_print.h \
-  test/cpucycles.c test/cpucycles.h randombytes.c $(KECCAK_SOURCES) \
-  $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=5 \
-	  -o $@ $< test/speed_print.c test/cpucycles.c randombytes.c \
-	  $(KECCAK_SOURCES)
+######################################################################
+# Keccak hardware build (mirrors NTT build)
+######################################################################
 
-test/test_mul: test/test_mul.c randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -UDBENCH -o $@ $< randombytes.c $(KECCAK_SOURCES)
+KECCAK_HW_DIR = ../hw/hash
+KECCAK_TOP    = keccak_f1600
 
-nistkat/PQCgenKAT_sign2: nistkat/PQCgenKAT_sign.c nistkat/rng.c nistkat/rng.h $(KECCAK_SOURCES) \
-  $(KECCAK_HEADERS)
-	$(CC) $(NISTFLAGS) -DDILITHIUM_MODE=2 \
-	  -o $@ $< nistkat/rng.c $(KECCAK_SOURCES) $(LDFLAGS) -lcrypto
+# Keccak RTL sources
+KECCAK_RTL_SRCS = \
+    $(KECCAK_HW_DIR)/keccak-hw/pkg_keccak.sv \
+    $(KECCAK_HW_DIR)/keccak_f1600.sv \
+    $(KECCAK_HW_DIR)/keccak-hw/keccak_round.sv \
+    $(KECCAK_HW_DIR)/keccak-hw/keccak_round_constants_gen.sv
 
-nistkat/PQCgenKAT_sign3: nistkat/PQCgenKAT_sign.c nistkat/rng.c nistkat/rng.h $(KECCAK_SOURCES) \
-  $(KECCAK_HEADERS)
-	$(CC) $(NISTFLAGS) -DDILITHIUM_MODE=3 \
-	  -o $@ $< nistkat/rng.c $(KECCAK_SOURCES) $(LDFLAGS) -lcrypto
+# Keccak SW sources
+KECCAK_SW_SRCS = \
+    $(SW_DIR)/fips202.c \
+    $(SW_DIR)/keccak_hw_verilator.cpp \
+    ../hw/hash/tb_keccak_f1600.cpp
 
-nistkat/PQCgenKAT_sign5: nistkat/PQCgenKAT_sign.c nistkat/rng.c nistkat/rng.h $(KECCAK_SOURCES) \
-  $(KECCAK_HEADERS)
-	$(CC) $(NISTFLAGS) -DDILITHIUM_MODE=5 \
-	  -o $@ $< nistkat/rng.c $(KECCAK_SOURCES) $(LDFLAGS) -lcrypto
+# Headers
+KECCAK_INCLUDES = -I$(SW_DIR) -I$(KECCAK_HW_DIR)
+
+obj_dir/V$(KECCAK_TOP): $(KECCAK_RTL_SRCS) $(KECCAK_SW_SRCS)
+	$(VERILATOR) --cc $(KECCAK_RTL_SRCS) \
+		--exe $(KECCAK_SW_SRCS) \
+		--top-module $(KECCAK_TOP) \
+		-CFLAGS "$(KECCAK_INCLUDES) -O2 -DKECCAK_HW" \
+		-LDFLAGS "-lm"
+	make -C obj_dir -f V$(KECCAK_TOP).mk
+
+keccak_hw: obj_dir/V$(KECCAK_TOP)
+
+keccak_hw_run: keccak_hw
+	./obj_dir/V$(KECCAK_TOP)
 
 clean:
-	rm -f *~ test/*~ *.gcno *.gcda *.lcov
-	rm -f libpqcrystals_dilithium2_ref.so
-	rm -f libpqcrystals_dilithium3_ref.so
-	rm -f libpqcrystals_dilithium5_ref.so
-	rm -f libpqcrystals_fips202_ref.so
-	rm -f test/test_dilithium2
-	rm -f test/test_dilithium3
-	rm -f test/test_dilithium5
-	rm -f test/test_vectors2
-	rm -f test/test_vectors3
-	rm -f test/test_vectors5
-	rm -f test/test_speed2
-	rm -f test/test_speed3
-	rm -f test/test_speed5
-	rm -f test/test_mul
-	rm -f nistkat/PQCgenKAT_sign2
-	rm -f nistkat/PQCgenKAT_sign3
-	rm -f nistkat/PQCgenKAT_sign5
+	rm -rf obj_dir $(DIL_OBJ_NTT) $(DIL_OBJ_KECCAK)

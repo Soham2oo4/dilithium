@@ -72,6 +72,17 @@ const uint64_t KeccakF_RoundConstants[NROUNDS] = {
   (uint64_t)0x8000000080008008ULL
 };
 
+/* Hardware-accelerated KeccakF1600 permutation (Verilator model).
+ * Compiled in when KECCAK_HW is defined in the Makefile.
+ * Analog of ntt_hw() in ntt.c for the NTT hardware. */
+#ifdef KECCAK_HW
+#ifdef __cplusplus
+extern "C" void KeccakF1600_StatePermute_hw(uint64_t state[25]);
+#else
+extern void KeccakF1600_StatePermute_hw(uint64_t state[25]);
+#endif
+#endif
+
 /*************************************************
 * Name:        KeccakF1600_StatePermute
 *
@@ -81,6 +92,11 @@ const uint64_t KeccakF_RoundConstants[NROUNDS] = {
 **************************************************/
 static void KeccakF1600_StatePermute(uint64_t state[25])
 {
+#ifdef KECCAK_HW
+  /* Delegate to the RTL model via Verilator (same pattern as NTT_HW in ntt.c) */
+  KeccakF1600_StatePermute_hw(state);
+  return;
+#else
         int round;
 
         uint64_t Aba, Abe, Abi, Abo, Abu;
@@ -341,7 +357,21 @@ static void KeccakF1600_StatePermute(uint64_t state[25])
         state[22] = Asi;
         state[23] = Aso;
         state[24] = Asu;
+#endif /* KECCAK_HW */
 }
+
+/* Public (non-static) wrapper used by the Verilator testbench
+ * (tb_keccak_f1600.cpp) to access the SW reference permutation. */
+// Ensure C++ linkage for testbench
+#ifdef __cplusplus
+extern "C" {
+#endif
+void KeccakF1600_StatePermute_pub(uint64_t state[25]) {
+  KeccakF1600_StatePermute(state);
+}
+#ifdef __cplusplus
+}
+#endif
 
 /*************************************************
 * Name:        keccak_init

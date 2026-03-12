@@ -2,6 +2,15 @@
 #include "params.h"
 #include "ntt.h"
 #include "reduce.h"
+#include <stdio.h>
+
+#ifdef NTT_HW
+#ifdef __cplusplus
+extern "C" void ntt_hw(int32_t *a);
+#else
+extern void ntt_hw(int32_t *a);
+#endif
+#endif
 
 static const int32_t zetas[N] = {
          0,    25847, -2608894,  -518909,   237124,  -777960,  -876248,   466468,
@@ -47,6 +56,12 @@ static const int32_t zetas[N] = {
 * Arguments:   - uint32_t p[N]: input/output coefficient array
 **************************************************/
 void ntt(int32_t a[N]) {
+#ifdef NTT_HW
+  
+  ntt_hw(a);
+  return;
+#else
+  printf("NTT in SW is used ");
   unsigned int len, start, j, k;
   int32_t zeta, t;
 
@@ -61,6 +76,7 @@ void ntt(int32_t a[N]) {
       }
     }
   }
+#endif
 }
 
 /*************************************************
