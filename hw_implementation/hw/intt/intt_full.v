@@ -5,10 +5,11 @@ module ntt_full (
     input  rst,
     input  start,
     output done,
+
     input  [7:0] ext_addr,
-    output signed [31:0] ext_data_out,
     input  signed [31:0] ext_data_in,
     input  ext_we,
+    output signed [31:0] ext_data_out,
     
     // Instrumentation outputs from controller
     output [2:0] state_out,
@@ -35,9 +36,13 @@ module ntt_full (
     wire signed [31:0] ram_out_a, ram_out_b;
     wire signed [31:0] bfu_a_out, bfu_b_out;
     wire signed [31:0] zeta_data;
+
+    reg [7:0] scale_idx;
+    localparam signed [31:0] F = 32'd41978;  // mont^2/256
     
     // Register BFU outputs only (not addresses!)
     reg signed [31:0] bfu_a_out_reg, bfu_b_out_reg;
+    reg final_stage;
     
     // Capture BFU outputs during COMPUTE
     always @(posedge clk) begin
@@ -79,7 +84,7 @@ module ntt_full (
     );
     
     // BFU
-    ntt_bfu bfu_inst (
+    intt_bfu bfu_inst (
         .a(ram_out_a),
         .b(ram_out_b),
         .zeta(zeta_data),
@@ -88,12 +93,13 @@ module ntt_full (
     );
     
     // Controller
-    ntt_controller ctrl_inst (
+    intt_controller ctrl_inst (
         .clk(clk),
         .rst(rst),
         .start(start & ~ext_we),
         .mode(1'b1),
         .done(done),
+        .final_stage(final_stage),
         .k(k),
         .j(j),
         .j_plus_len(j_plus_len),
@@ -118,6 +124,25 @@ module ntt_full (
         end else begin
             j_reg_debug <= j;
             j_plus_len_reg_debug <= j_plus_len;
+        end
+    end
+
+
+    always @(posedge clk) begin
+        if (rst) begin
+            scale_idx <= 0;
+        end else if (ctrl_inst.final_stage) begin
+            // Read from RAM, multiply by F, write back
+            // Assuming single-port sequential write for simplicity
+            ram_data_in <= montgomery_reduce(F * ram_data_out); 
+            ram_addr_wr <= scale_idx;
+            ram_we <= 1'b1;
+
+            scale_idx <= scale_idx + 1;
+            if (scale_idx == 255)
+                scale_idx <= 0;  // done scaling
+        end else begin
+            ram_we <= 1'b0;
         end
     end
     

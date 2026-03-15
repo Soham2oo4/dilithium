@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module ntt_bfu (
+module intt_bfu (
     input  signed [31:0] a,
     input  signed [31:0] b,
     input  signed [31:0] zeta,
@@ -12,7 +12,7 @@ module ntt_bfu (
     localparam signed [63:0] Q = 64'd8380417;
     localparam signed [31:0] QINV = 32'd58728449;  // Q^-1 mod 2^32
 
-    // Full precision multiply
+    // Full precision multiplyn/
     wire signed [63:0] mul;
     assign mul = $signed(-zeta) * $signed(a-b);
 

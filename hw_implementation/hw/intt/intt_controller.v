@@ -1,11 +1,12 @@
 `timescale 1ns/1ps
 
-module ntt_controller (
+module intt_controller (
 input  clk,
 input  rst,
 input  start,
 input  mode,          // 0 = NTT, 1 = INTT
 output reg done,
+output reg final_stage,
 
 output reg [8:0] k,
 output reg [7:0] j,
@@ -39,6 +40,17 @@ reg [8:0] k_idx;
 wire [7:0] len_ntt  = 8'd128 >> len_exp;
 wire [7:0] len_intt = 8'd1   << len_exp;
 wire [7:0] len_val  = mode ? len_intt : len_ntt;
+
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
+        final_stage <= 1'b0;
+    end else begin
+        if (len_exp == 3'd7 && start_idx + 2*len_val >= 9'd256)
+            final_stage <= 1'b1;
+        else
+            final_stage <= 1'b0;
+    end
+end
 
 always @(posedge clk or posedge rst) begin
     if (rst) begin
@@ -148,6 +160,7 @@ always @(posedge clk or posedge rst) begin
                 state <= IDLE;
             end
 
+            default: state <= IDLE;
         endcase
     end
 end
