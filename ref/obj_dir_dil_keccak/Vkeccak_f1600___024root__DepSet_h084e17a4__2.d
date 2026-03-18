@@ -1,3 +1,0 @@
-Vkeccak_f1600___024root__DepSet_h084e17a4__2.o: \
- Vkeccak_f1600___024root__DepSet_h084e17a4__2.cpp Vkeccak_f1600__pch.h \
- Vkeccak_f1600___024root.h

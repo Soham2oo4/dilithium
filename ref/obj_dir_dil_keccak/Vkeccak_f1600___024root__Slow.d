@@ -1,2 +1,0 @@
-Vkeccak_f1600___024root__Slow.o: Vkeccak_f1600___024root__Slow.cpp \
- Vkeccak_f1600__pch.h Vkeccak_f1600__Syms.h Vkeccak_f1600___024root.h
