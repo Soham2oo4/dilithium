@@ -4,7 +4,7 @@
 #include <cstdio>
 
 extern "C" void intt_hw(int32_t *a) {
-    Vntt_full *top = new Vntt_full;
+    Vintt_full *top = new Vintt_full;
 
     // -----------------
     // RESET

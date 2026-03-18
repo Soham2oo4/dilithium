@@ -12,6 +12,14 @@ extern void ntt_hw(int32_t *a);
 #endif
 #endif
 
+#ifdef INTT_HW
+#ifdef __cplusplus
+extern "C" void intt_hw(int32_t *a);
+#else
+extern void intt_hw(int32_t *a);
+#endif
+#endif
+
 static const int32_t zetas[N] = {
          0,    25847, -2608894,  -518909,   237124,  -777960,  -876248,   466468,
    1826347,  2353451,  -359251, -2091905,  3119733, -2884855,  3111497,  2680103,
@@ -91,7 +99,7 @@ void ntt(int32_t a[N]) {
 * Arguments:   - uint32_t p[N]: input/output coefficient array
 **************************************************/
 void invntt_tomont(int32_t a[N]) {
-#ifdef NTT_HW
+#ifdef INTT_HW
   
   intt_hw(a);
   return;

@@ -45,13 +45,15 @@ obj_dir/V$(TOP): $(RTL_SRCS) $(SW_SRCS)
 run: all
 	./obj_dir/V$(TOP)
 
-######################################################################
-# Combined Dilithium hardware build (NTT + Keccak)
-######################################################################
+# ######################################################################
+# # Combined Dilithium hardware build (NTT + Keccak)
+# ######################################################################
 
 DIL_NTT_TOP    = ntt_full
+DIL_INTT_TOP    = intt_full
 DIL_KECCAK_TOP = keccak_f1600
 DIL_OBJ_NTT    = obj_dir_dil_ntt
+DIL_OBJ_INTT    = obj_dir_dil_intt
 DIL_OBJ_KECCAK = obj_dir_dil_keccak
 
 DIL_NTT_RTL_SRCS = \
@@ -60,6 +62,13 @@ DIL_NTT_RTL_SRCS = \
     ../hw/ntt/ntt_ram.v \
     ../hw/ntt/ntt_bfu.v \
     ../hw/ntt/zetas_rom.v
+
+DIL_INTT_RTL_SRCS = \
+    ../hw/intt/intt_full.v \
+    ../hw/intt/intt_controller.v \
+    ../hw/intt/ntt_ram.v \
+    ../hw/intt/intt_bfu.v \
+    ../hw/intt/zetas_rom.v
 
 DIL_KECCAK_RTL_SRCS = \
     ../hw/hash/keccak-hw/pkg_keccak.sv \
@@ -90,7 +99,7 @@ $(DIL_OBJ_KECCAK)/V$(DIL_KECCAK_TOP)__ALL.a: $(DIL_KECCAK_RTL_SRCS)
 		--Mdir $(DIL_OBJ_KECCAK)
 	make -C $(DIL_OBJ_KECCAK) -f V$(DIL_KECCAK_TOP).mk V$(DIL_KECCAK_TOP)__ALL.a
 
-$(DIL_OBJ_NTT)/V$(DIL_NTT_TOP): $(DIL_NTT_RTL_SRCS) $(DIL_HW_SW_SRCS) $(DIL_OBJ_KECCAK)/V$(DIL_KECCAK_TOP)__ALL.a
+$(DIL_OBJ_NTT)/V$(DIL_NTT_TOP)_: $(DIL_NTT_RTL_SRCS) $(DIL_HW_SW_SRCS) $(DIL_OBJ_KECCAK)/V$(DIL_KECCAK_TOP)__ALL.a
 	$(VERILATOR) --cc $(DIL_NTT_RTL_SRCS) \
 		--exe $(DIL_HW_SW_SRCS) \
 		--top-module $(DIL_NTT_TOP) \
@@ -99,9 +108,57 @@ $(DIL_OBJ_NTT)/V$(DIL_NTT_TOP): $(DIL_NTT_RTL_SRCS) $(DIL_HW_SW_SRCS) $(DIL_OBJ_
 		-LDFLAGS "-lm $(abspath $(DIL_OBJ_KECCAK))/V$(DIL_KECCAK_TOP)__ALL.a"
 	make -C $(DIL_OBJ_NTT) -f V$(DIL_NTT_TOP).mk
 
-dilithium_hw: $(DIL_OBJ_NTT)/V$(DIL_NTT_TOP)
+dilithium_hw: $(DIL_OBJ_NTT)/V$(DIL_NTT_TOP)_
 
 run_dilithium_hw: dilithium_hw
+	./$(DIL_OBJ_NTT)/V$(DIL_NTT_TOP)
+
+######################################################################
+# Combined Dilithium hardware build (NTT + INTT + Keccak)
+######################################################################
+
+DIL_HW_SW_SRCS_COMBINED = \
+    my_sign_verify.c \
+    sign.c \
+    packing.c \
+    poly.c \
+    polyvec.c \
+    ntt.c \
+    reduce.c \
+    rounding.c \
+    fips202.c \
+    symmetric-shake.c \
+    randombytes.c \
+    ntt_hw_verilator.cpp \
+    keccak_hw_verilator.cpp \
+    intt_hw_verilator.cpp \
+
+DIL_HW_INCLUDES_COMBINED = -I. -I../hw/intt -I../hw/ntt -I../hw/hash -I../hw/hash/keccak-hw
+
+# $(DIL_OBJ_KECCAK)/V$(DIL_KECCAK_TOP)__ALL.a: $(DIL_KECCAK_RTL_SRCS)
+# 	$(VERILATOR) --cc $(DIL_KECCAK_RTL_SRCS) \
+# 		--top-module $(DIL_KECCAK_TOP) \
+# 		--Mdir $(DIL_OBJ_KECCAK) 
+# 	make -C $(DIL_OBJ_KECCAK) -f V$(DIL_KECCAK_TOP).mk V$(DIL_KECCAK_TOP)__ALL.a
+
+$(DIL_OBJ_INTT)/V$(DIL_INTT_TOP)__ALL.a: $(DIL_INTT_RTL_SRCS)
+	$(VERILATOR) --cc $(DIL_INTT_RTL_SRCS) \
+		--top-module $(DIL_INTT_TOP) \
+		--Mdir $(DIL_OBJ_INTT) 
+	make -C $(DIL_OBJ_INTT) -f V$(DIL_INTT_TOP).mk V$(DIL_INTT_TOP)__ALL.a
+
+$(DIL_OBJ_NTT)/V$(DIL_NTT_TOP): $(DIL_NTT_RTL_SRCS) $(DIL_HW_SW_SRCS_COMBINED)  
+	$(VERILATOR) --cc $(DIL_NTT_RTL_SRCS) \
+		--exe $(DIL_HW_SW_SRCS_COMBINED) \
+		--top-module $(DIL_NTT_TOP) \
+		--Mdir $(DIL_OBJ_NTT) \
+		-CFLAGS "$(DIL_HW_INCLUDES_COMBINED) -I$(abspath $(DIL_OBJ_KECCAK)) -I$(abspath $(DIL_OBJ_INTT)) -O2 -DNTT_HW -DINTT_HW -DKECCAK_HW" \
+		-LDFLAGS "-lm $(abspath $(DIL_OBJ_INTT))/V$(DIL_INTT_TOP)__ALL.a $(abspath $(DIL_OBJ_KECCAK))/V$(DIL_KECCAK_TOP)__ALL.a" 
+	make -C $(DIL_OBJ_NTT) -f V$(DIL_NTT_TOP).mk
+
+dilithium_hw_final: $(DIL_OBJ_KECCAK)/V$(DIL_KECCAK_TOP)__ALL.a $(DIL_OBJ_INTT)/V$(DIL_INTT_TOP)__ALL.a $(DIL_OBJ_NTT)/V$(DIL_NTT_TOP) 
+
+run_dilithium_hw_final: dilithium_hw_final
 	./$(DIL_OBJ_NTT)/V$(DIL_NTT_TOP)
 
 ######################################################################
@@ -141,4 +198,4 @@ keccak_hw_run: keccak_hw
 	./obj_dir/V$(KECCAK_TOP)
 
 clean:
-	rm -rf obj_dir $(DIL_OBJ_NTT) $(DIL_OBJ_KECCAK)
+	rm -rf obj_dir $(DIL_OBJ_NTT) $(DIL_OBJ_INTT) $(DIL_OBJ_KECCAK)
