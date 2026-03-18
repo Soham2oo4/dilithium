@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 module intt_bfu (
     input  signed [31:0] a,
     input  signed [31:0] b,

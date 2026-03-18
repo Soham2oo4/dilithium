@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
 
     for (int i = 0; i < N; i++) {
         top->ext_addr = i;
-        top->ext_data_in = (i == 0) ? 1 : 0;
+        top->ext_data_in = 1;
         tick(top, tfp);
     }
 
@@ -93,8 +93,10 @@ int main(int argc, char** argv) {
         top->ext_addr = i;
         tick(top, tfp);
 
-        int32_t val = top->ext_data_out;
-        std::cout << "a[" << i << "] = " << val << "\n";
+        int32_t ip = top->ext_data_in;
+        int32_t op = top->ext_data_out;
+
+        std::cout << "[" << i << "]" << "ip: " << ip << " op: " << op << std::endl;
     }
 
     // Cleanup
