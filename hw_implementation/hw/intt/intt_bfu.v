@@ -1,35 +1,46 @@
-`timescale 1ns/1ps
-
 module intt_bfu (
     input  signed [31:0] a,
     input  signed [31:0] b,
     input  signed [31:0] zeta,
+    input  scale_mode,
     output signed [31:0] a_out,
     output signed [31:0] b_out
 );
 
-    // Dilithium prime (force 64-bit)
     localparam signed [63:0] Q = 64'd8380417;
-    localparam signed [31:0] QINV = 32'd58728449;  // Q^-1 mod 2^32
+    localparam signed [31:0] QINV = 32'd58728449;
+    localparam signed [31:0] F = 32'd41978;
 
-    // Full precision multiplyn/
-    wire signed [63:0] mul;
-    assign mul = $signed(-zeta) * $signed(a-b);
+    // =========================
+    // ⭐ Negate zeta for INTT
+    // =========================
+    wire signed [31:0] zeta_neg = -zeta;
 
-    // Montgomery reduction: r = a * 2^-32 (mod Q)
-    // t_low = (a & 0xFFFFFFFF) * QINV & 0xFFFFFFFF
-    wire signed [63:0] mul_qinv;
-    assign mul_qinv = mul * $signed(QINV);
-    wire signed [31:0] t_low;
-    assign t_low = mul_qinv[31:0];
-    
-    // t = (a - t_low * Q) >> 32
-    wire signed [63:0] t_reduction;
-    assign t_reduction = mul - ($signed(t_low) * Q);
-    wire signed [31:0] t;
-    assign t = t_reduction[63:32];  // arithmetic right shift by 32 bits
+    // =========================
+    // Butterfly path
+    // =========================
+    wire signed [31:0] t = a;
+    wire signed [31:0] temp = t - b;
 
-    assign a_out = a + b;
-    assign b_out = t;
+    wire signed [63:0] mul_bfly = $signed(zeta_neg) * $signed(temp);
+    wire signed [63:0] mul_qinv_bfly = mul_bfly * $signed(QINV);
+    wire signed [31:0] t_low_bfly = mul_qinv_bfly[31:0];
+    wire signed [63:0] t_red_bfly = mul_bfly - ($signed(t_low_bfly) * Q);
+    wire signed [31:0] reduced_bfly = t_red_bfly[63:32];
+
+    // =========================
+    // Scaling path
+    // =========================
+    wire signed [63:0] mul_scale = $signed(F) * $signed(a);
+    wire signed [63:0] mul_qinv_scale = mul_scale * $signed(QINV);
+    wire signed [31:0] t_low_scale = mul_qinv_scale[31:0];
+    wire signed [63:0] t_red_scale = mul_scale - ($signed(t_low_scale) * Q);
+    wire signed [31:0] reduced_scale = t_red_scale[63:32];
+
+    // =========================
+    // Output mux
+    // =========================
+    assign a_out = scale_mode ? reduced_scale : (t + b);
+    assign b_out = scale_mode ? 32'd0       : reduced_bfly;
 
 endmodule

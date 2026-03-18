@@ -1,17 +1,15 @@
 `timescale 1ns/1ps
-
-module ntt_full (
+module intt_full (
     input  clk,
     input  rst,
     input  start,
     output done,
-
     input  [7:0] ext_addr,
+    output signed [31:0] ext_data_out,
     input  signed [31:0] ext_data_in,
     input  ext_we,
-    output signed [31:0] ext_data_out,
     
-    // Instrumentation outputs from controller
+    // Instrumentation outputs
     output [2:0] state_out,
     output [2:0] len_exp_out,
     output [7:0] start_idx_out,
@@ -29,22 +27,20 @@ module ntt_full (
     output [7:0] j_plus_len_comb_out
 );
 
-
     wire [8:0] k;
     wire [7:0] j, j_plus_len;
     wire bfu_valid, write_en, write_b_en;
+    wire scale_mode;   
+
     wire signed [31:0] ram_out_a, ram_out_b;
     wire signed [31:0] bfu_a_out, bfu_b_out;
     wire signed [31:0] zeta_data;
 
-    reg [7:0] scale_idx;
-    localparam signed [31:0] F = 32'd41978;  // mont^2/256
-    
-    // Register BFU outputs only (not addresses!)
+    // =========================
+    // BFU output registers
+    // =========================
     reg signed [31:0] bfu_a_out_reg, bfu_b_out_reg;
-    reg final_stage;
     
-    // Capture BFU outputs during COMPUTE
     always @(posedge clk) begin
         if (rst) begin
             bfu_a_out_reg <= 32'd0;
@@ -55,23 +51,36 @@ module ntt_full (
         end
     end
     
-    // ===== KEY FIX: Use controller addresses DIRECTLY =====
-    // No address registers needed! RAM reads are combinational.
-    wire [7:0] ram_addr_a = ext_we ? ext_addr : j;
-    wire [7:0] ram_addr_b = ext_we ? 8'd0 : j_plus_len;
+    // =========================
+    // Addressing
+    // - When the core is idle, allow external reads from ext_addr.
+    // - During internal NTT/INTT operation, internal ports drive the RAM.
+    // =========================
+    wire internal_active = bfu_valid | write_en | write_b_en;
+    //wire internal_active = ~done;
+
+    wire [7:0] ram_addr_a = ext_we ? ext_addr : (internal_active ? j : ext_addr);
+    wire [7:0] ram_addr_b = ext_we ? 8'd0 : (internal_active ? j_plus_len : 8'd0);
     
-    // Write addresses: use controller values directly too
     wire [7:0] write_addr = ext_we ? ext_addr : (write_b_en ? j_plus_len : j);
     wire we = ext_we | write_en | write_b_en;
-    wire signed [31:0] write_data = ext_we ? ext_data_in : (write_b_en ? bfu_b_out_reg : bfu_a_out_reg);
+
+    wire signed [31:0] write_data =
+        ext_we ? ext_data_in :
+        (write_b_en ? bfu_b_out_reg :
+         (scale_mode ? bfu_a_out : bfu_a_out_reg));
     
+    // =========================
     // Zeta ROM
+    // =========================
     zetas_rom zeta_rom_inst (
         .addr(k),
         .data(zeta_data)
     );
     
-    // RAM - combinational reads
+    // =========================
+    // RAM
+    // =========================
     ntt_ram ram_inst (
         .clk(clk),
         .addr_a(ram_addr_a),
@@ -83,29 +92,33 @@ module ntt_full (
         .we(we)
     );
     
-    // BFU
+    // =========================
+    // INTT BFU
+    // =========================
     intt_bfu bfu_inst (
         .a(ram_out_a),
         .b(ram_out_b),
-        .zeta(zeta_data),
+        .zeta(zeta_data),   // ⚠️ must be negated inside BFU
+        .scale_mode(scale_mode),
         .a_out(bfu_a_out),
         .b_out(bfu_b_out)
     );
     
-    // Controller
+    // =========================
+    // INTT Controller
+    // =========================
     intt_controller ctrl_inst (
         .clk(clk),
         .rst(rst),
         .start(start & ~ext_we),
-        .mode(1'b1),
         .done(done),
-        .final_stage(final_stage),
         .k(k),
         .j(j),
         .j_plus_len(j_plus_len),
         .bfu_valid(bfu_valid),
         .write_en(write_en),
         .write_b_en(write_b_en),
+        .scale_mode(scale_mode),   // ⭐ NEW
         .state_out(state_out),
         .len_exp_out(len_exp_out),
         .start_idx_out(start_idx_out),
@@ -115,8 +128,11 @@ module ntt_full (
     
     assign ext_data_out = ram_out_a;
     
-    // Debug outputs - need to create j_reg for compatibility
+    // =========================
+    // Debug (UNCHANGED)
+    // =========================
     reg [7:0] j_reg_debug, j_plus_len_reg_debug;
+
     always @(posedge clk) begin
         if (rst) begin
             j_reg_debug <= 0;
@@ -124,25 +140,6 @@ module ntt_full (
         end else begin
             j_reg_debug <= j;
             j_plus_len_reg_debug <= j_plus_len;
-        end
-    end
-
-
-    always @(posedge clk) begin
-        if (rst) begin
-            scale_idx <= 0;
-        end else if (ctrl_inst.final_stage) begin
-            // Read from RAM, multiply by F, write back
-            // Assuming single-port sequential write for simplicity
-            ram_data_in <= montgomery_reduce(F * ram_data_out); 
-            ram_addr_wr <= scale_idx;
-            ram_we <= 1'b1;
-
-            scale_idx <= scale_idx + 1;
-            if (scale_idx == 255)
-                scale_idx <= 0;  // done scaling
-        end else begin
-            ram_we <= 1'b0;
         end
     end
     

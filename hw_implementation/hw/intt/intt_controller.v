@@ -1,168 +1,212 @@
 `timescale 1ns/1ps
 
 module intt_controller (
-input  clk,
-input  rst,
-input  start,
-input  mode,          // 0 = NTT, 1 = INTT
-output reg done,
-output reg final_stage,
+    input  clk,
+    input  rst,
+    input  start,
+    output reg done,
+    
+    output reg [8:0] k,
+    output reg [7:0] j,
+    output reg [7:0] j_plus_len,
+    output reg bfu_valid,
+    output reg write_en,
+    output reg write_b_en,
+    output reg scale_mode,
 
-output reg [8:0] k,
-output reg [7:0] j,
-output reg [7:0] j_plus_len,
-output reg bfu_valid,
-output reg write_en,
-output reg write_b_en,
-
-// instrumentation
-output reg [2:0] state_out,
-output reg [2:0] len_exp_out,
-output reg [7:0] start_idx_out,
-output reg [7:0] j_idx_out,
-output reg [8:0] k_out
-
+    // Instrumentation
+    output reg [2:0] state_out,
+    output reg [2:0] len_exp_out,
+    output reg [7:0] start_idx_out,
+    output reg [7:0] j_idx_out,
+    output reg [8:0] k_out
 );
 
-localparam IDLE       = 3'd0;
-localparam COMPUTE    = 3'd1;
-localparam WRITE_A    = 3'd2;
-localparam WRITE_B    = 3'd3;
-localparam DONE_STATE = 3'd4;
+    // =========================
+    // STATES
+    // =========================
+    localparam IDLE       = 3'd0;
+    localparam COMPUTE    = 3'd1;
+    localparam WRITE_A    = 3'd2;
+    localparam WRITE_B    = 3'd3;
+    localparam SCALE      = 3'd4;
+    localparam SCALE_LAST = 3'd5;
+    localparam DONE_STATE = 3'd6;
 
-reg [2:0] state;
-reg [2:0] len_exp;
-reg [7:0] start_idx;
-reg [7:0] j_idx;
-reg [8:0] k_idx;
+    reg [2:0] state;
 
-// length depending on mode
-wire [7:0] len_ntt  = 8'd128 >> len_exp;
-wire [7:0] len_intt = 8'd1   << len_exp;
-wire [7:0] len_val  = mode ? len_intt : len_ntt;
+    // =========================
+    // LOOP VARIABLES
+    // =========================
+    reg [2:0] len_exp;     // 0 → 7  => len = 1 → 128
+    reg [7:0] start_idx;
+    reg [7:0] j_idx;
+    reg [8:0] k_idx;       // for zetas
+    reg [7:0] scale_idx;
 
-always @(posedge clk or posedge rst) begin
-    if (rst) begin
-        final_stage <= 1'b0;
-    end else begin
-        if (len_exp == 3'd7 && start_idx + 2*len_val >= 9'd256)
-            final_stage <= 1'b1;
-        else
-            final_stage <= 1'b0;
-    end
-end
+    wire [7:0] len_val = 8'd1 << len_exp;
 
-always @(posedge clk or posedge rst) begin
-    if (rst) begin
-        state <= IDLE;
-        len_exp <= 3'd0;
-        start_idx <= 8'd0;
-        j_idx <= 8'd0;
+    // =========================
+    // MAIN FSM
+    // =========================
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            state <= IDLE;
 
-        k_idx <= 9'd1;
-        k <= 9'd1;
+            len_exp <= 0;
+            start_idx <= 0;
+            j_idx <= 0;
+            k_idx <= 9'd256;
 
-        j <= 8'd0;
-        j_plus_len <= 8'd0;
+            scale_idx <= 0;
 
-        bfu_valid <= 0;
-        write_en <= 0;
-        write_b_en <= 0;
-        done <= 0;
+            k <= 0;
+            j <= 0;
+            j_plus_len <= 0;
 
-    end else begin
+            bfu_valid <= 0;
+            write_en <= 0;
+            write_b_en <= 0;
+            scale_mode <= 0;
 
-        // output assignments
-        k <= k_idx;
-        j <= j_idx;
-        j_plus_len <= j_idx + len_val;
+            done <= 0;
 
-        state_out <= state;
-        len_exp_out <= len_exp;
-        start_idx_out <= start_idx;
-        j_idx_out <= j_idx;
-        k_out <= k_idx;
+        end else begin
 
-        case(state)
+            // Default outputs
+            // In invntt, k is decremented before use; output k should lag k_idx by one.
+            k <= k_idx - 1;
+            j <= j_idx;
+            j_plus_len <= j_idx + len_val;
 
+            // Instrumentation
+            state_out <= state;
+            len_exp_out <= len_exp;
+            start_idx_out <= start_idx;
+            j_idx_out <= j_idx;
+            k_out <= k_idx;
+
+            case (state)
+
+            // =========================
             IDLE: begin
                 done <= 0;
                 bfu_valid <= 0;
                 write_en <= 0;
                 write_b_en <= 0;
+                scale_mode <= 0;
 
-                if(start) begin
+                if (start) begin
                     state <= COMPUTE;
-                    len_exp <= 0;
+
+                    len_exp <= 0;       // len = 1
                     start_idx <= 0;
                     j_idx <= 0;
-
-                    // k initialization
-                    k_idx <= mode ? 9'd256 : 9'd1;
+                    k_idx <= 9'd256;   // will decrement before use
                 end
             end
 
+            // =========================
+            // COMPUTE
             COMPUTE: begin
                 bfu_valid <= 1;
                 write_en <= 0;
                 write_b_en <= 0;
+                scale_mode <= 0;
+
                 state <= WRITE_A;
             end
 
+            // =========================
             WRITE_A: begin
                 bfu_valid <= 0;
                 write_en <= 1;
                 write_b_en <= 0;
+                scale_mode <= 0;
+
                 state <= WRITE_B;
             end
 
+            // =========================
             WRITE_B: begin
                 write_en <= 0;
                 write_b_en <= 1;
+                bfu_valid <= 0;
+                scale_mode <= 0;
 
-                // finished j loop?
-                if((j_idx + 1) == (start_idx + len_val)) begin
+                // End of inner j loop?
+                if ((j_idx + 1) == (start_idx + len_val)) begin
 
-                    // update zeta index
-                    if(mode)
-                        k_idx <= k_idx - 1;
-                    else
-                        k_idx <= k_idx + 1;
+                    // Decrement zeta index once per group (matches invntt reference)
+                    k_idx <= k_idx - 1;
 
-                    // next start block
-                    if((start_idx + 2*len_val) < 256) begin
+                    // Next start?
+                    if ((start_idx + 2*len_val) < 256) begin
                         start_idx <= start_idx + 2*len_val;
                         j_idx <= start_idx + 2*len_val;
                         state <= COMPUTE;
-                    end
 
-                    // next stage
-                    else if(len_exp < 7) begin
+                    end else if (len_exp < 3'd7) begin
+                        // Next stage (len doubles)
                         len_exp <= len_exp + 1;
                         start_idx <= 0;
                         j_idx <= 0;
                         state <= COMPUTE;
+
+                    end else begin
+                        // Done butterflies → go to scaling
+                        state <= SCALE;
+                        scale_idx <= 0;
                     end
 
-                    else begin
-                        state <= DONE_STATE;
-                    end
-                end
-
-                else begin
+                end else begin
+                    // Continue j loop
                     j_idx <= j_idx + 1;
                     state <= COMPUTE;
                 end
             end
 
+            // =========================
+            // FINAL SCALING LOOP
+            SCALE: begin
+                scale_mode <= 1;
+                bfu_valid <= 1;
+                write_en <= 1;
+                write_b_en <= 0;
+
+                j_idx <= scale_idx;   // ✅ FIX: no direct j assignment
+
+                if (scale_idx == 8'd255) begin
+                    state <= SCALE_LAST;
+                end else begin
+                    scale_idx <= scale_idx + 1;
+                end
+            end
+
+            SCALE_LAST: begin
+                // j_idx now holds 255, let the write complete
+                scale_mode <= 1;
+                bfu_valid <= 0;
+                write_en <= 1;
+                write_b_en <= 0;
+                state <= DONE_STATE;
+            end
+
+            // =========================
             DONE_STATE: begin
                 done <= 1;
+                bfu_valid <= 0;
+                write_en <= 0;
+                write_b_en <= 0;
+                scale_mode <= 0;
+
                 state <= IDLE;
             end
 
             default: state <= IDLE;
-        endcase
+
+            endcase
+        end
     end
-end
 
 endmodule
