@@ -91,6 +91,11 @@ void ntt(int32_t a[N]) {
 * Arguments:   - uint32_t p[N]: input/output coefficient array
 **************************************************/
 void invntt_tomont(int32_t a[N]) {
+#ifdef NTT_HW
+  
+  intt_hw(a);
+  return;
+#else
   unsigned int start, len, j, k;
   int32_t t, zeta;
   const int32_t f = 41978; // mont^2/256
@@ -111,4 +116,5 @@ void invntt_tomont(int32_t a[N]) {
   for(j = 0; j < N; ++j) {
     a[j] = montgomery_reduce((int64_t)f * a[j]);
   }
+#endif
 }
