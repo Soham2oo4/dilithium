@@ -7,3 +7,7 @@ PQCsignKAT_Dilithium5.rsp
 tvecs2
 tvecs3
 tvecs5
+obj_dir_dil_ntt/
+obj_dir_dil_intt/
+obj_dir_dil_keccak/
+obj_dir/
